@@ -1,0 +1,20 @@
+[
+  {
+    "screenshot": "screenshots/dashboard.png",
+    "url": "https://parkfinder.id/dashboard",
+    "output": "dashboard.png",
+    "fit": "cover"
+  },
+  {
+    "screenshot": "screenshots/login.png",
+    "url": "https://parkfinder.id/login",
+    "output": "login.png",
+    "fit": "contain"
+  },
+  {
+    "screenshot": "screenshots/booking.png",
+    "url": "https://parkfinder.id/booking",
+    "output": "booking.png",
+    "fit": "cover"
+  }
+]

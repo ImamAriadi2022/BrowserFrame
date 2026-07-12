@@ -1,0 +1,13 @@
+{
+  "regions_confirmed": false,
+  "viewport": null,
+  "address_bar": null,
+  "url_text": {
+    "font_size": 16,
+    "text_color": "#202124",
+    "padding_left": 20,
+    "background_color": "#FFFFFF"
+  },
+  "contain_background": "#FFFFFF",
+  "template_path": null
+}
