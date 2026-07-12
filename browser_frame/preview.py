@@ -28,6 +28,7 @@ def create_preview(template_path: Path, screenshot_path: Path, url: str, fit_mod
         address_bar=settings.address_bar,
         screenshot=screenshot,
         url=url,
+        website_title=settings.website_title,
         text_settings=settings.url_text,
         contain_background=settings.contain_background,
         fit_mode=fit_mode,

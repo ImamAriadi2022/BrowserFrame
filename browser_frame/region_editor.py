@@ -51,6 +51,7 @@ class RegionEditorApp:
         self.zoom_var = StringVar(value="100%")
         self.template_info_var = StringVar(value="Template: none | Resolution: -")
         self.status_var = StringVar(value="Open a template to begin.")
+        self.website_title_var = StringVar(value=self.settings.website_title)
 
         self._build_ui()
         self._load_persisted_template_path()
@@ -129,6 +130,10 @@ class RegionEditorApp:
 
         actions = ttk.LabelFrame(sidebar, text="Actions")
         actions.pack(fill=X, padx=2, pady=6)
+        title_box = ttk.LabelFrame(sidebar, text="Website Title")
+        title_box.pack(fill=X, padx=2, pady=6)
+        ttk.Entry(title_box, textvariable=self.website_title_var).pack(fill=X, padx=8, pady=(8, 4))
+        ttk.Button(title_box, text="Apply Title", command=self.apply_title).pack(fill=X, padx=8, pady=(0, 8))
         ttk.Button(actions, text="Open Template", command=self.open_template_dialog).pack(fill=X, padx=8, pady=(8, 4))
         ttk.Button(actions, text="Preview Result", command=self.preview_result).pack(fill=X, padx=8, pady=4)
         ttk.Button(actions, text="Confirm Regions", command=self.confirm_regions).pack(fill=X, padx=8, pady=4)
@@ -145,10 +150,17 @@ class RegionEditorApp:
 
     def _load_persisted_template_path(self) -> None:
         profile = self.settings.profile(self.device)
+        self.website_title_var.set(self.settings.website_title)
         if profile.template_path and Path(profile.template_path).exists():
             self.load_template(Path(profile.template_path))
         elif self.template_path and self.template_path.exists():
             self.load_template(self.template_path)
+
+    def apply_title(self) -> None:
+        self.settings.website_title = self.website_title_var.get().strip()
+        self._persist_settings()
+        self.redraw()
+        self.status_var.set("Website title updated")
 
     def open_template_dialog(self) -> None:
         path = filedialog.askopenfilename(filetypes=[("PNG images", "*.png"), ("Image files", "*.png;*.jpg;*.jpeg;*.webp"), ("All files", "*.*")])
@@ -553,6 +565,7 @@ class RegionEditorApp:
     def _persist_settings(self) -> None:
         self.settings.profile(self.device).regions_confirmed = self.settings.regions_confirmed
         self.settings.active_device = self.device
+        self.settings.website_title = self.website_title_var.get().strip()
         save_settings(self.settings)
 
 

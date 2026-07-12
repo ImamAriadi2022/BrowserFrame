@@ -87,12 +87,14 @@ class BatchGenerator:
         screenshot = load_image(item.screenshot)
         if item.fit not in {"cover", "contain"}:
             raise ValueError(f"Format fit is not valid: {item.fit}")
+        website_title = item.title if item.title is not None else settings.website_title
         return composite_template(
             template=template,
             viewport=viewport,
             address_bar=address_bar,
             screenshot=screenshot,
             url=item.url,
+            website_title=website_title,
             text_settings=settings.url_text,
             contain_background=settings.contain_background,
             fit_mode=item.fit,

@@ -106,6 +106,7 @@ class DeviceProfile:
 class Settings:
     active_device: DeviceKind = "desktop"
     regions_confirmed: bool = False
+    website_title: str = ""
     profiles: dict[str, DeviceProfile] = field(
         default_factory=lambda: {
             "desktop": DeviceProfile(),
@@ -147,6 +148,7 @@ class Settings:
         return {
             "active_device": self.active_device,
             "regions_confirmed": self.regions_confirmed,
+            "website_title": self.website_title,
             "profiles": {device: profile.to_dict() for device, profile in self.profiles.items()},
             "url_text": self.url_text.to_dict(),
             "contain_background": self.contain_background,
@@ -165,6 +167,7 @@ class Settings:
         return cls(
             active_device=cast(DeviceKind, active_device),
             regions_confirmed=bool(data.get("regions_confirmed", False)),
+            website_title=str(data.get("website_title", "")),
             profiles=profiles,
             url_text=TextSettings.from_dict(data.get("url_text")),
             contain_background=str(data.get("contain_background", "#FFFFFF")),
@@ -184,6 +187,7 @@ class BatchItem:
     url: str
     output: str
     fit: FitMode = "cover"
+    title: str | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any], base_dir: Path) -> "BatchItem":
@@ -195,4 +199,5 @@ class BatchItem:
             url=str(data["url"]),
             output=str(data["output"]),
             fit=cast(FitMode, fit),
+            title=str(data.get("title")) if data.get("title") is not None else None,
         )

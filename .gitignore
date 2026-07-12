@@ -2,3 +2,9 @@ output/desktop/*
 output/mobile/*
 screenshots/desktop/*
 screenshots/mobile/*
+
+mobile-apk/
+mobile-web/
+
+web-admin/
+web-qr-code/

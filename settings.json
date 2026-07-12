@@ -1,20 +1,21 @@
 {
   "active_device": "desktop",
   "regions_confirmed": true,
+  "website_title": "",
   "profiles": {
     "desktop": {
       "template_path": "template.desktop.png",
       "viewport": {
         "x": 0,
-        "y": 121,
-        "width": 1596,
-        "height": 730
+        "y": 128,
+        "width": 1600,
+        "height": 722
       },
       "address_bar": {
-        "x": 162,
-        "y": 55,
-        "width": 1056,
-        "height": 24
+        "x": 136,
+        "y": 58,
+        "width": 1089,
+        "height": 15
       },
       "regions_confirmed": true
     },

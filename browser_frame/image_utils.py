@@ -124,6 +124,30 @@ def _contrast_text_color(background_hex: str) -> str:
     return "#000000" if luminance >= 160 else "#ffffff"
 
 
+def render_website_title_on_base(base: Image.Image, title: str) -> Image.Image:
+    if not title.strip():
+        return base.copy()
+    canvas = base.copy()
+    draw = ImageDraw.Draw(canvas)
+    title_region = Region(58, 2, 360, 32)
+    font = load_font(14)
+    text = title.strip()
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    max_width = max(1, title_region.width - 16)
+    text = truncate_text(text, font, max_width)
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    fill_color = _sample_address_bar_background(base, title_region)
+    draw.rectangle((title_region.x, title_region.y, title_region.x + title_region.width, title_region.y + title_region.height), fill=fill_color)
+    text_x = title_region.x + 6
+    text_y = title_region.y + max(0, (title_region.height - text_height) // 2 - 1)
+    draw.text((text_x, text_y), text, font=font, fill=_contrast_text_color(fill_color))
+    return canvas
+
+
 def render_url_on_base(base: Image.Image, address_bar: Region, url: str, text_settings: TextSettings) -> Image.Image:
     canvas = base.copy()
     draw = ImageDraw.Draw(canvas)
@@ -151,11 +175,13 @@ def composite_template(
     address_bar: Region,
     screenshot: Image.Image,
     url: str,
+    website_title: str,
     text_settings: TextSettings,
     contain_background: str,
     fit_mode: FitMode,
 ) -> Image.Image:
     base = template.copy().convert("RGBA")
+    base = render_website_title_on_base(base, website_title)
     fitted = fit_image(screenshot.convert("RGBA"), (viewport.width, viewport.height), fit_mode, contain_background)
     base.alpha_composite(fitted, (viewport.x, viewport.y))
     return render_url_on_base(base, address_bar, url, text_settings)
