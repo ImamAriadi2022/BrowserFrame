@@ -102,21 +102,46 @@ def truncate_text(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
     return best
 
 
+def _sample_address_bar_background(image: Image.Image, address_bar: Region) -> str:
+    crop = image.crop((address_bar.x, address_bar.y, address_bar.x + address_bar.width, address_bar.y + address_bar.height)).convert("RGBA")
+    pixels = list(crop.getdata())
+    if not pixels:
+        return "#FFFFFF"
+    red = sum(pixel[0] for pixel in pixels) // len(pixels)
+    green = sum(pixel[1] for pixel in pixels) // len(pixels)
+    blue = sum(pixel[2] for pixel in pixels) // len(pixels)
+    return f"#{red:02x}{green:02x}{blue:02x}"
+
+
+def _contrast_text_color(background_hex: str) -> str:
+    background = background_hex.lstrip("#")
+    if len(background) != 6:
+        return "#000000"
+    red = int(background[0:2], 16)
+    green = int(background[2:4], 16)
+    blue = int(background[4:6], 16)
+    luminance = (0.299 * red) + (0.587 * green) + (0.114 * blue)
+    return "#000000" if luminance >= 160 else "#ffffff"
+
+
 def render_url_on_base(base: Image.Image, address_bar: Region, url: str, text_settings: TextSettings) -> Image.Image:
     canvas = base.copy()
     draw = ImageDraw.Draw(canvas)
-    fill_color = text_settings.background_color
-    draw.rectangle(
-        (address_bar.x, address_bar.y, address_bar.x + address_bar.width, address_bar.y + address_bar.height),
-        fill=fill_color,
-    )
     font = load_font(text_settings.font_size)
     available_width = address_bar.width - text_settings.padding_left * 2
     text = truncate_text(url, font, available_width)
     bbox = draw.textbbox((0, 0), text, font=font)
     text_height = bbox[3] - bbox[1]
+    text_width = bbox[2] - bbox[0]
+    text_x = address_bar.x + text_settings.padding_left
     text_y = address_bar.y + max(0, (address_bar.height - text_height) // 2 - 1)
-    draw.text((address_bar.x + text_settings.padding_left, text_y), text, font=font, fill=text_settings.text_color)
+    left = max(address_bar.x + 4, text_x - 4)
+    top = max(address_bar.y + 2, text_y - 2)
+    right = min(address_bar.x + address_bar.width - 4, text_x + text_width + 6)
+    bottom = min(address_bar.y + address_bar.height - 2, text_y + text_height + 4)
+    fill_color = _sample_address_bar_background(base, address_bar)
+    draw.rectangle((left, top, right, bottom), fill=fill_color)
+    draw.text((text_x, text_y), text, font=font, fill=_contrast_text_color(fill_color))
     return canvas
 
 

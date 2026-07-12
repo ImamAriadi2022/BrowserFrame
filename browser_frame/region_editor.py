@@ -414,18 +414,18 @@ class RegionEditorApp:
         self.template_photo = ImageTk.PhotoImage(display)
         self.canvas.create_image(0, 0, anchor="nw", image=self.template_photo)
         self.canvas.configure(scrollregion=(0, 0, display.width, display.height))
-        self._draw_region(self.settings.viewport, outline="#1e88e5", label="VIEWPORT", fill="#1e88e520", dashed=False)
-        self._draw_region(self.settings.address_bar, outline="#e53935", label="ADDRESS BAR", fill="#e5393520", dashed=True)
+        self._draw_region(self.settings.viewport, outline="#1e88e5", label="VIEWPORT", fill="#1e88e5", dashed=False, stipple="gray25")
+        self._draw_region(self.settings.address_bar, outline="#e53935", label="ADDRESS BAR", fill="#e53935", dashed=True, stipple="gray50")
         self.zoom_var.set(f"{round(self.transform.zoom * 100)}%")
         self._load_current_region_into_inputs()
 
-    def _draw_region(self, region: Region | None, outline: str, label: str, fill: str, dashed: bool) -> None:
+    def _draw_region(self, region: Region | None, outline: str, label: str, fill: str, dashed: bool, stipple: str | None) -> None:
         if region is None:
             return
         x1, y1, x2, y2 = self.image_to_canvas_region(region)
         dash = (6, 4) if dashed else None
         self.canvas.create_rectangle(x1, y1, x2, y2, outline=outline, width=3, dash=dash)
-        self.canvas.create_rectangle(x1, y1, x2, y2, fill=fill, outline="")
+        self.canvas.create_rectangle(x1, y1, x2, y2, fill=fill, outline="", stipple=stipple)
         self.canvas.create_text(x1 + 8, y1 + 8, text=label, anchor="nw", fill=outline, font=("Segoe UI", 11, "bold"))
         self.canvas.create_text(
             x1 + 8,

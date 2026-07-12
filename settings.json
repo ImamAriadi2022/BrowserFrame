@@ -1,12 +1,22 @@
 {
   "active_device": "desktop",
-  "regions_confirmed": false,
+  "regions_confirmed": true,
   "profiles": {
     "desktop": {
       "template_path": "template.desktop.png",
-      "viewport": null,
-      "address_bar": null,
-      "regions_confirmed": false
+      "viewport": {
+        "x": 0,
+        "y": 121,
+        "width": 1596,
+        "height": 730
+      },
+      "address_bar": {
+        "x": 162,
+        "y": 55,
+        "width": 1056,
+        "height": 24
+      },
+      "regions_confirmed": true
     },
     "mobile": {
       "template_path": "template.mobile.png",

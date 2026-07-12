@@ -2,40 +2,124 @@
   "active_device": "desktop",
   "desktop": [
     {
-      "screenshot": "screenshots/desktop/dashboard.png",
-      "url": "https://parkfinder.id/dashboard",
-      "output": "desktop/dashboard.png",
+      "screenshot": "screenshots/desktop/splash-wellcome.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/splash-wellcome.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/onboarding-tutor.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/onboarding-tutor.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/home.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/home.png",
       "fit": "cover"
     },
     {
       "screenshot": "screenshots/desktop/login.png",
-      "url": "https://parkfinder.id/login",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
       "output": "desktop/login.png",
-      "fit": "contain"
+      "fit": "cover"
     },
     {
-      "screenshot": "screenshots/desktop/booking.png",
-      "url": "https://parkfinder.id/booking",
-      "output": "desktop/booking.png",
+      "screenshot": "screenshots/desktop/register.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/register.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/profil.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/profil.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/edit-profil.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/edit-profil.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/history.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/history.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/reservasi.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/reservasi.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/reservasi-terisi.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/reservasi-terisi.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/reservasi-berhasil.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/reservasi-berhasil.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/scan.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/scan.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/scan-berhasil.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/scan-berhasil.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/status-parkir.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/status-parkir.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/keluar-parkir.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/keluar-parkir.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/edit-berhasil.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/edit-berhasil.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/area-parkir.png",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
+      "output": "desktop/area-parkir.png",
       "fit": "cover"
     }
   ],
   "mobile": [
     {
       "screenshot": "screenshots/mobile/dashboard.png",
-      "url": "https://parkfinder.id/dashboard",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
       "output": "mobile/dashboard.png",
       "fit": "cover"
     },
     {
       "screenshot": "screenshots/mobile/login.png",
-      "url": "https://parkfinder.id/login",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
       "output": "mobile/login.png",
       "fit": "contain"
     },
     {
       "screenshot": "screenshots/mobile/booking.png",
-      "url": "https://parkfinder.id/booking",
+      "url": "https://www.figma.com/proto/F18zgJ0wPMMFtupC77nLdD/skripsi?node-id=105-473&t=7RtNnFB3lsHmy5Py-0&scaling=scale-down&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=21%3A39",
       "output": "mobile/booking.png",
       "fit": "cover"
     }
