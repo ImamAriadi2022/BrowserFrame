@@ -3,12 +3,13 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 from PIL import Image
 
 from .config import ensure_output_dir, load_config, load_settings, validate_template_path
 from .image_utils import composite_template, load_image, validate_region
-from .models import BatchItem, Region, Settings
+from .models import BatchItem, DeviceKind, Region, Settings
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +45,11 @@ class BatchGenerator:
         logger.info("Loading template: %s", self.template_path)
         template = self._load_template()
         settings = load_settings(self.settings_path)
-        if not settings.regions_confirmed:
+        device_profile = settings.profile(settings.active_device)
+        if not device_profile.regions_confirmed:
             raise ValueError("Regions have not been confirmed. Run: python main.py --edit")
         viewport, address_bar = self._load_regions(settings, template.size)
-        items = load_config(self.config_path)
+        items = load_config(self.config_path, cast(DeviceKind, settings.active_device))
         output_dir = ensure_output_dir(self.output_dir)
         success = 0
         failed = 0
@@ -56,8 +58,10 @@ class BatchGenerator:
             logger.info("Processing %s/%s: %s", index, len(items), item.output)
             try:
                 result = self._process_item(template, viewport, address_bar, settings, item, output_dir)
-                result.save(output_dir / item.output, format="PNG")
-                logger.info("Saved: %s", output_dir / item.output)
+                output_path = output_dir / item.output
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                result.save(output_path, format="PNG")
+                logger.info("Saved: %s", output_path)
                 success += 1
             except Exception as exc:  # noqa: BLE001
                 failed += 1

@@ -6,6 +6,7 @@ from typing import Any, Literal, cast
 
 FitMode = Literal["cover", "contain"]
 RegionKind = Literal["viewport", "address_bar"]
+DeviceKind = Literal["desktop", "mobile"]
 
 
 @dataclass(slots=True)
@@ -74,35 +75,99 @@ class TextSettings:
 
 
 @dataclass(slots=True)
-class Settings:
-    regions_confirmed: bool = False
+class DeviceProfile:
+    template_path: str | None = None
     viewport: Region | None = None
     address_bar: Region | None = None
-    url_text: TextSettings = field(default_factory=TextSettings)
-    contain_background: str = "#FFFFFF"
-    template_path: str | None = None
+    regions_confirmed: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "regions_confirmed": self.regions_confirmed,
+            "template_path": self.template_path,
             "viewport": None if self.viewport is None else self.viewport.to_dict(),
             "address_bar": None if self.address_bar is None else self.address_bar.to_dict(),
+            "regions_confirmed": self.regions_confirmed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> "DeviceProfile":
+        data = data or {}
+        viewport = data.get("viewport")
+        address_bar = data.get("address_bar")
+        return cls(
+            template_path=data.get("template_path"),
+            viewport=Region.from_dict(viewport) if viewport else None,
+            address_bar=Region.from_dict(address_bar) if address_bar else None,
+            regions_confirmed=bool(data.get("regions_confirmed", False)),
+        )
+
+
+@dataclass(slots=True)
+class Settings:
+    active_device: DeviceKind = "desktop"
+    regions_confirmed: bool = False
+    profiles: dict[str, DeviceProfile] = field(
+        default_factory=lambda: {
+            "desktop": DeviceProfile(),
+            "mobile": DeviceProfile(),
+        }
+    )
+    url_text: TextSettings = field(default_factory=TextSettings)
+    contain_background: str = "#FFFFFF"
+
+    def profile(self, device: DeviceKind | None = None) -> DeviceProfile:
+        device = device or self.active_device
+        return self.profiles.setdefault(device, DeviceProfile())
+
+    @property
+    def viewport(self) -> Region | None:
+        return self.profile().viewport
+
+    @viewport.setter
+    def viewport(self, value: Region | None) -> None:
+        self.profile().viewport = value
+
+    @property
+    def address_bar(self) -> Region | None:
+        return self.profile().address_bar
+
+    @address_bar.setter
+    def address_bar(self, value: Region | None) -> None:
+        self.profile().address_bar = value
+
+    @property
+    def template_path(self) -> str | None:
+        return self.profile().template_path
+
+    @template_path.setter
+    def template_path(self, value: str | None) -> None:
+        self.profile().template_path = value
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "active_device": self.active_device,
+            "regions_confirmed": self.regions_confirmed,
+            "profiles": {device: profile.to_dict() for device, profile in self.profiles.items()},
             "url_text": self.url_text.to_dict(),
             "contain_background": self.contain_background,
-            "template_path": self.template_path,
         }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Settings":
-        viewport = data.get("viewport")
-        address_bar = data.get("address_bar")
+        profiles_data = data.get("profiles") or {}
+        active_device = str(data.get("active_device", "desktop"))
+        if active_device not in {"desktop", "mobile"}:
+            active_device = "desktop"
+        profiles = {
+            "desktop": DeviceProfile.from_dict(profiles_data.get("desktop")),
+            "mobile": DeviceProfile.from_dict(profiles_data.get("mobile")),
+        }
         return cls(
+            active_device=cast(DeviceKind, active_device),
             regions_confirmed=bool(data.get("regions_confirmed", False)),
-            viewport=Region.from_dict(viewport) if viewport else None,
-            address_bar=Region.from_dict(address_bar) if address_bar else None,
+            profiles=profiles,
             url_text=TextSettings.from_dict(data.get("url_text")),
             contain_background=str(data.get("contain_background", "#FFFFFF")),
-            template_path=data.get("template_path"),
         )
 
 

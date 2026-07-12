@@ -1,20 +1,43 @@
-[
-  {
-    "screenshot": "screenshots/dashboard.png",
-    "url": "https://parkfinder.id/dashboard",
-    "output": "dashboard.png",
-    "fit": "cover"
-  },
-  {
-    "screenshot": "screenshots/login.png",
-    "url": "https://parkfinder.id/login",
-    "output": "login.png",
-    "fit": "contain"
-  },
-  {
-    "screenshot": "screenshots/booking.png",
-    "url": "https://parkfinder.id/booking",
-    "output": "booking.png",
-    "fit": "cover"
-  }
-]
+{
+  "active_device": "desktop",
+  "desktop": [
+    {
+      "screenshot": "screenshots/desktop/dashboard.png",
+      "url": "https://parkfinder.id/dashboard",
+      "output": "desktop/dashboard.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/desktop/login.png",
+      "url": "https://parkfinder.id/login",
+      "output": "desktop/login.png",
+      "fit": "contain"
+    },
+    {
+      "screenshot": "screenshots/desktop/booking.png",
+      "url": "https://parkfinder.id/booking",
+      "output": "desktop/booking.png",
+      "fit": "cover"
+    }
+  ],
+  "mobile": [
+    {
+      "screenshot": "screenshots/mobile/dashboard.png",
+      "url": "https://parkfinder.id/dashboard",
+      "output": "mobile/dashboard.png",
+      "fit": "cover"
+    },
+    {
+      "screenshot": "screenshots/mobile/login.png",
+      "url": "https://parkfinder.id/login",
+      "output": "mobile/login.png",
+      "fit": "contain"
+    },
+    {
+      "screenshot": "screenshots/mobile/booking.png",
+      "url": "https://parkfinder.id/booking",
+      "output": "mobile/booking.png",
+      "fit": "cover"
+    }
+  ]
+}

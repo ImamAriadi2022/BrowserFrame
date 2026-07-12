@@ -2,6 +2,13 @@
 
 BrowserFrame is a Python tool for generating consistent website documentation images from a browser template screenshot. It preserves the browser frame, toolbar, address bar, and taskbar while replacing only the selected viewport area and the address bar URL.
 
+The project now supports two device profiles:
+
+- Windows / Desktop
+- Mobile
+
+When the editor opens, you must choose the device first. The selected device controls which template, screenshot set, and region settings are used.
+
 ## Purpose
 
 The project is designed for a strict workflow:
@@ -59,14 +66,15 @@ python main.py --generate --config config.json --template template.png
 ## Workflow
 
 1. Open the editor with `python main.py`.
-2. Load a browser template using `Open Template`.
-3. Select `Viewport` or `Address Bar`.
-4. Drag on the template to create a selection.
-5. Use the coordinate inputs for fine adjustment.
-6. Use zoom controls for precise placement.
-7. Click `Preview Result` to inspect the composited output.
-8. If the position is wrong, use `Back to Edit` and correct it.
-9. Click `Confirm Regions` and choose `Edit Again`, `Save Only`, or `Save & Generate`.
+2. Choose a device profile: Desktop or Mobile.
+3. Load or confirm the template for that device.
+4. Select `Viewport` or `Address Bar`.
+5. Drag on the template to create a selection.
+6. Use the coordinate inputs for fine adjustment.
+7. Use zoom controls for precise placement.
+8. Click `Preview Result` to inspect the composited output.
+9. If the position is wrong, use `Back to Edit` and correct it.
+10. Click `Confirm Regions` and choose `Edit Again`, `Save Only`, or `Save & Generate`.
 
 ## Region Editing
 
@@ -113,7 +121,17 @@ If one item fails, the batch continues with the next item.
 
 ## `config.json`
 
-`config.json` must be a JSON array. Each item supports:
+`config.json` is device-aware. The sample file contains two arrays, one for Desktop and one for Mobile.
+
+```json
+{
+  "active_device": "desktop",
+  "desktop": [],
+  "mobile": []
+}
+```
+
+Each batch item supports:
 
 ```json
 {
@@ -131,24 +149,29 @@ Fields:
 - `output`: filename under `output/`
 - `fit`: `cover` or `contain`
 
+When you run generation, the active device determines which array is used.
+
 ## `settings.json`
 
-`settings.json` stores the selected regions and rendering preferences.
+`settings.json` stores the active device, one profile per device, and the rendering preferences.
 
 ```json
 {
+  "active_device": "desktop",
   "regions_confirmed": false,
-  "viewport": {
-    "x": 0,
-    "y": 0,
-    "width": 0,
-    "height": 0
-  },
-  "address_bar": {
-    "x": 0,
-    "y": 0,
-    "width": 0,
-    "height": 0
+  "profiles": {
+    "desktop": {
+      "template_path": "template.desktop.png",
+      "viewport": null,
+      "address_bar": null,
+      "regions_confirmed": false
+    },
+    "mobile": {
+      "template_path": "template.mobile.png",
+      "viewport": null,
+      "address_bar": null,
+      "regions_confirmed": false
+    }
   },
   "url_text": {
     "font_size": 16,
@@ -156,8 +179,7 @@ Fields:
     "padding_left": 20,
     "background_color": "#FFFFFF"
   },
-  "contain_background": "#FFFFFF",
-  "template_path": "template.png"
+  "contain_background": "#FFFFFF"
 }
 ```
 
@@ -167,6 +189,8 @@ Fields:
 - `python main.py --edit` opens the Region Editor
 - `python main.py --preview` renders a preview image using the current settings
 - `python main.py --generate` generates all output images from `config.json`
+- `python main.py --device desktop` selects the Desktop profile from the CLI
+- `python main.py --device mobile` selects the Mobile profile from the CLI
 - `python main.py --config custom.json` uses a different config file
 - `python main.py --template custom.png` uses a different template file
 

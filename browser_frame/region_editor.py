@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 from .config import load_config, load_settings, save_settings, validate_template_path
 from .image_utils import load_image, validate_region
 from .generator import BatchGenerator
-from .models import BatchItem, Region, Settings
+from .models import BatchItem, DeviceKind, Region, Settings
 from .preview import create_preview
 
 logger = logging.getLogger(__name__)
@@ -25,9 +25,8 @@ class CanvasTransform:
 
 
 class RegionEditorApp:
-    def __init__(self, root: Tk, template_path: Path | None = None) -> None:
+    def __init__(self, root: Tk, template_path: Path | None = None, device: DeviceKind | None = None) -> None:
         self.root = root
-        self.root.title("BrowserFrame Region Editor")
         self.root.geometry("1400x900")
 
         self.template_path = template_path
@@ -35,11 +34,15 @@ class RegionEditorApp:
         self.template_photo: ImageTk.PhotoImage | None = None
         self.transform = CanvasTransform()
         self.active_region: RegionKind = "viewport"
+        self.device: DeviceKind = device or "desktop"
         self.drag_mode: str | None = None
         self.drag_origin_image: tuple[int, int] | None = None
         self.drag_origin_region: Region | None = None
         self.drag_handle: str | None = None
         self.settings = load_settings()
+        self.settings.active_device = self.device
+        self.settings.regions_confirmed = self.settings.profile(self.device).regions_confirmed
+        self.root.title(f"BrowserFrame Region Editor - {self.device.title()}")
 
         self.x_var = StringVar(value="0")
         self.y_var = StringVar(value="0")
@@ -141,8 +144,9 @@ class RegionEditorApp:
         ttk.Entry(row, textvariable=variable, width=14).pack(side=LEFT, fill=X, expand=True)
 
     def _load_persisted_template_path(self) -> None:
-        if self.settings.template_path and Path(self.settings.template_path).exists():
-            self.load_template(Path(self.settings.template_path))
+        profile = self.settings.profile(self.device)
+        if profile.template_path and Path(profile.template_path).exists():
+            self.load_template(Path(profile.template_path))
         elif self.template_path and self.template_path.exists():
             self.load_template(self.template_path)
 
@@ -155,7 +159,7 @@ class RegionEditorApp:
         validate_template_path(path)
         self.template_path = path
         self.template_image = load_image(path)
-        self.settings.template_path = str(path)
+        self.settings.profile(self.device).template_path = str(path)
         self._persist_settings()
         self.reset_zoom()
         if self.settings.viewport is None:
@@ -172,7 +176,7 @@ class RegionEditorApp:
             self.template_info_var.set("Template: none | Resolution: -")
             return
         self.template_info_var.set(
-            f"Template: {self.template_path.name} | Resolution: {self.template_image.width} × {self.template_image.height}"
+            f"Device: {self.device.upper()} | Template: {self.template_path.name} | Resolution: {self.template_image.width} × {self.template_image.height}"
         )
 
     def set_active_region(self, region: RegionKind) -> None:
@@ -474,17 +478,11 @@ class RegionEditorApp:
         ttk.Button(action_row, text="Confirm Regions", command=confirm_regions).pack(side=LEFT, expand=True, fill=X, padx=4)
 
     def _choose_preview_item(self) -> BatchItem | None:
-        preview_path = filedialog.askopenfilename(
-            title="Select screenshot for preview",
-            filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.webp"), ("All files", "*.*")],
-        )
-        if not preview_path:
+        items = load_config(Path("config.json"), self.device)
+        if not items:
+            messagebox.showerror("BrowserFrame", f"No batch items found for {self.device}.")
             return None
-        url = simple_input_dialog(self.root, "Preview URL", "Enter a sample URL for preview:", "https://example.com")
-        if url is None:
-            return None
-        fit_mode = "cover"
-        return BatchItem(screenshot=Path(preview_path), url=url, output="preview.png", fit=fit_mode)
+        return items[0]
 
     def confirm_regions(self) -> None:
         if self.template_image is None:
@@ -553,6 +551,8 @@ class RegionEditorApp:
         self.confirm_regions()
 
     def _persist_settings(self) -> None:
+        self.settings.profile(self.device).regions_confirmed = self.settings.regions_confirmed
+        self.settings.active_device = self.device
         save_settings(self.settings)
 
 
@@ -609,7 +609,30 @@ def choice_dialog(root: Tk, title: str, message: str, choices: list[str]) -> str
     return result["value"]
 
 
-def run_editor(template_path: Path | None = None) -> None:
+def run_editor(template_path: Path | None = None, device: DeviceKind | None = None) -> None:
     root = Tk()
-    app = RegionEditorApp(root, template_path=template_path)
+    selected_device = device or choose_device_dialog(root)
+    app = RegionEditorApp(root, template_path=template_path, device=selected_device)
     root.mainloop()
+
+
+def choose_device_dialog(root: Tk) -> DeviceKind:
+    dialog = Toplevel(root)
+    dialog.title("Choose Device")
+    dialog.geometry("360x180")
+    dialog.transient(root)
+    dialog.grab_set()
+    selected = StringVar(value="desktop")
+    ttk.Label(dialog, text="Choose the device profile to edit:", wraplength=320).pack(padx=12, pady=(12, 8))
+    ttk.Radiobutton(dialog, text="Windows / Desktop", value="desktop", variable=selected).pack(anchor="w", padx=20, pady=4)
+    ttk.Radiobutton(dialog, text="Mobile", value="mobile", variable=selected).pack(anchor="w", padx=20, pady=4)
+    result: dict[str, DeviceKind | None] = {"value": None}
+
+    def confirm() -> None:
+        result["value"] = selected.get()  # type: ignore[assignment]
+        dialog.destroy()
+
+    ttk.Button(dialog, text="Continue", command=confirm).pack(fill=X, padx=12, pady=12)
+    dialog.protocol("WM_DELETE_WINDOW", confirm)
+    root.wait_window(dialog)
+    return result["value"] or "desktop"
