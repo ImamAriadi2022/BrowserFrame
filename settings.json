@@ -1,28 +1,46 @@
 {
   "active_device": "desktop",
-  "regions_confirmed": true,
-  "website_title": "",
+  "regions_confirmed": false,
+  "website_title": "Figma - Skripsi",
+  "website_logo_text": "F",
+  "output_dir": "C:/Users/Imam Ariadi/OneDrive/Documents/SKRIPSI/skripshit-rule/Testing-UHE/fadil abdul fattah",
   "profiles": {
     "desktop": {
-      "template_path": "template.desktop.png",
+      "template_path": "C:\\programming\\BrowserFrame\\tamplate\\dian.png",
       "viewport": {
         "x": 0,
-        "y": 128,
-        "width": 1600,
-        "height": 722
+        "y": 150,
+        "width": 1593,
+        "height": 686
       },
       "address_bar": {
-        "x": 136,
-        "y": 58,
-        "width": 1089,
-        "height": 15
+        "x": 244,
+        "y": 65,
+        "width": 1122,
+        "height": 27
       },
-      "regions_confirmed": true
+      "website_title_region": {
+        "x": 87,
+        "y": 15,
+        "width": 178,
+        "height": 23
+      },
+      "website_logo_region": {
+        "x": 57,
+        "y": 15,
+        "width": 26,
+        "height": 22
+      },
+      "website_logo_image_path": "C:/Users/Imam Ariadi/Downloads/logo-figma.png",
+      "regions_confirmed": false
     },
     "mobile": {
       "template_path": "template.mobile.png",
       "viewport": null,
       "address_bar": null,
+      "website_title_region": null,
+      "website_logo_region": null,
+      "website_logo_image_path": null,
       "regions_confirmed": false
     }
   },

@@ -29,6 +29,11 @@ def load_image(path: Path) -> Image.Image:
     return Image.open(path).convert("RGBA")
 
 
+def load_logo_image(path: Path, size: tuple[int, int]) -> Image.Image:
+    image = load_image(path)
+    return fit_image(image, size, "contain", "#00000000")
+
+
 def resize_cover(image: Image.Image, size: tuple[int, int]) -> Image.Image:
     target_width, target_height = size
     source_width, source_height = image.size
@@ -113,6 +118,31 @@ def _sample_address_bar_background(image: Image.Image, address_bar: Region) -> s
     return f"#{red:02x}{green:02x}{blue:02x}"
 
 
+def _sample_border_background(image: Image.Image, region: Region) -> str:
+    pixels = []
+    img_width, img_height = image.size
+    for x in range(region.x, region.x + region.width):
+        if region.y > 0:
+            px = image.getpixel((x, region.y - 1))
+            pixels.append(px[:3])
+        if region.y + region.height < img_height:
+            px = image.getpixel((x, region.y + region.height))
+            pixels.append(px[:3])
+    for y in range(region.y, region.y + region.height):
+        if region.x > 0:
+            px = image.getpixel((region.x - 1, y))
+            pixels.append(px[:3])
+        if region.x + region.width < img_width:
+            px = image.getpixel((region.x + region.width, y))
+            pixels.append(px[:3])
+    if not pixels:
+        return "#FFFFFF"
+    red = sum(p[0] for p in pixels) // len(pixels)
+    green = sum(p[1] for p in pixels) // len(pixels)
+    blue = sum(p[2] for p in pixels) // len(pixels)
+    return f"#{red:02x}{green:02x}{blue:02x}"
+
+
 def _contrast_text_color(background_hex: str) -> str:
     background = background_hex.lstrip("#")
     if len(background) != 6:
@@ -124,13 +154,30 @@ def _contrast_text_color(background_hex: str) -> str:
     return "#000000" if luminance >= 160 else "#ffffff"
 
 
-def render_website_title_on_base(base: Image.Image, title: str) -> Image.Image:
-    if not title.strip():
+def _badge_fill_color(source: Image.Image) -> str:
+    pixels = list(source.convert("RGBA").getdata())
+    if not pixels:
+        return "#3b82f6"
+    red = sum(pixel[0] for pixel in pixels) // len(pixels)
+    green = sum(pixel[1] for pixel in pixels) // len(pixels)
+    blue = sum(pixel[2] for pixel in pixels) // len(pixels)
+    return f"#{max(0, red - 20):02x}{max(0, green - 20):02x}{min(255, blue + 30):02x}"
+
+
+def render_website_title_on_base(
+    base: Image.Image,
+    title: str,
+    title_region: Region,
+    logo_region: Region,
+    logo_text: str = "",
+    logo_image: Image.Image | None = None,
+) -> Image.Image:
+    if not title.strip() and logo_image is None and not logo_text.strip():
         return base.copy()
     canvas = base.copy()
     draw = ImageDraw.Draw(canvas)
-    title_region = Region(58, 2, 360, 32)
     font = load_font(14)
+    logo_font = load_font(12)
     text = title.strip()
     bbox = draw.textbbox((0, 0), text, font=font)
     text_width = bbox[2] - bbox[0]
@@ -140,11 +187,26 @@ def render_website_title_on_base(base: Image.Image, title: str) -> Image.Image:
     bbox = draw.textbbox((0, 0), text, font=font)
     text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
-    fill_color = _sample_address_bar_background(base, title_region)
-    draw.rectangle((title_region.x, title_region.y, title_region.x + title_region.width, title_region.y + title_region.height), fill=fill_color)
+    if logo_image is not None:
+        logo_bg = _sample_border_background(base, logo_region)
+        draw.rectangle((logo_region.x, logo_region.y, logo_region.x + logo_region.width, logo_region.y + logo_region.height), fill=logo_bg)
+        image = logo_image.copy().resize((logo_region.width, logo_region.height), Resampling.LANCZOS)
+        canvas.alpha_composite(image, (logo_region.x, logo_region.y))
+    else:
+        badge_fill = _badge_fill_color(base.crop((logo_region.x, logo_region.y, logo_region.x + logo_region.width, logo_region.y + logo_region.height)))
+        badge_text = (logo_text.strip() or title.strip()[:2] or "BF").upper()[:3]
+        badge_bbox = draw.textbbox((0, 0), badge_text, font=logo_font)
+        badge_text_width = badge_bbox[2] - badge_bbox[0]
+        badge_text_height = badge_bbox[3] - badge_bbox[1]
+        draw.rounded_rectangle((logo_region.x, logo_region.y, logo_region.x + logo_region.width, logo_region.y + logo_region.height), radius=6, fill=badge_fill)
+        badge_text_x = logo_region.x + max(0, (logo_region.width - badge_text_width) // 2)
+        badge_text_y = logo_region.y + max(0, (logo_region.height - badge_text_height) // 2 - 1)
+        draw.text((badge_text_x, badge_text_y), badge_text, font=logo_font, fill=_contrast_text_color(badge_fill))
     text_x = title_region.x + 6
     text_y = title_region.y + max(0, (title_region.height - text_height) // 2 - 1)
-    draw.text((text_x, text_y), text, font=font, fill=_contrast_text_color(fill_color))
+    text_bg = _sample_border_background(base, title_region)
+    draw.rectangle((text_x, text_y, text_x + text_width, text_y + text_height), fill=text_bg)
+    draw.text((text_x, text_y), text, font=font, fill=_contrast_text_color(text_bg))
     return canvas
 
 
@@ -176,12 +238,16 @@ def composite_template(
     screenshot: Image.Image,
     url: str,
     website_title: str,
+    website_logo_text: str,
+    title_region: Region,
+    logo_region: Region,
+    website_logo_image: Image.Image | None,
     text_settings: TextSettings,
     contain_background: str,
     fit_mode: FitMode,
 ) -> Image.Image:
     base = template.copy().convert("RGBA")
-    base = render_website_title_on_base(base, website_title)
+    base = render_website_title_on_base(base, website_title, title_region, logo_region, website_logo_text, website_logo_image)
     fitted = fit_image(screenshot.convert("RGBA"), (viewport.width, viewport.height), fit_mode, contain_background)
     base.alpha_composite(fitted, (viewport.x, viewport.y))
     return render_url_on_base(base, address_bar, url, text_settings)

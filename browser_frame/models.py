@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 FitMode = Literal["cover", "contain"]
-RegionKind = Literal["viewport", "address_bar"]
+RegionKind = Literal["viewport", "address_bar", "website_title_region", "website_logo_region"]
 DeviceKind = Literal["desktop", "mobile"]
 
 
@@ -79,6 +79,9 @@ class DeviceProfile:
     template_path: str | None = None
     viewport: Region | None = None
     address_bar: Region | None = None
+    website_title_region: Region | None = None
+    website_logo_region: Region | None = None
+    website_logo_image_path: str | None = None
     regions_confirmed: bool = False
 
     def to_dict(self) -> dict[str, Any]:
@@ -86,6 +89,9 @@ class DeviceProfile:
             "template_path": self.template_path,
             "viewport": None if self.viewport is None else self.viewport.to_dict(),
             "address_bar": None if self.address_bar is None else self.address_bar.to_dict(),
+            "website_title_region": None if self.website_title_region is None else self.website_title_region.to_dict(),
+            "website_logo_region": None if self.website_logo_region is None else self.website_logo_region.to_dict(),
+            "website_logo_image_path": self.website_logo_image_path,
             "regions_confirmed": self.regions_confirmed,
         }
 
@@ -94,10 +100,15 @@ class DeviceProfile:
         data = data or {}
         viewport = data.get("viewport")
         address_bar = data.get("address_bar")
+        website_title = data.get("website_title_region") or data.get("website_title")
+        website_logo = data.get("website_logo_region") or data.get("website_logo")
         return cls(
             template_path=data.get("template_path"),
             viewport=Region.from_dict(viewport) if viewport else None,
             address_bar=Region.from_dict(address_bar) if address_bar else None,
+            website_title_region=Region.from_dict(website_title) if website_title else None,
+            website_logo_region=Region.from_dict(website_logo) if website_logo else None,
+            website_logo_image_path=data.get("website_logo_image_path"),
             regions_confirmed=bool(data.get("regions_confirmed", False)),
         )
 
@@ -107,6 +118,8 @@ class Settings:
     active_device: DeviceKind = "desktop"
     regions_confirmed: bool = False
     website_title: str = ""
+    website_logo_text: str = ""
+    output_dir: str = "output"
     profiles: dict[str, DeviceProfile] = field(
         default_factory=lambda: {
             "desktop": DeviceProfile(),
@@ -149,6 +162,8 @@ class Settings:
             "active_device": self.active_device,
             "regions_confirmed": self.regions_confirmed,
             "website_title": self.website_title,
+            "website_logo_text": self.website_logo_text,
+            "output_dir": self.output_dir,
             "profiles": {device: profile.to_dict() for device, profile in self.profiles.items()},
             "url_text": self.url_text.to_dict(),
             "contain_background": self.contain_background,
@@ -168,6 +183,8 @@ class Settings:
             active_device=cast(DeviceKind, active_device),
             regions_confirmed=bool(data.get("regions_confirmed", False)),
             website_title=str(data.get("website_title", "")),
+            website_logo_text=str(data.get("website_logo_text", "")),
+            output_dir=str(data.get("output_dir", "output")),
             profiles=profiles,
             url_text=TextSettings.from_dict(data.get("url_text")),
             contain_background=str(data.get("contain_background", "#FFFFFF")),

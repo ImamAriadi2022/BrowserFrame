@@ -8,7 +8,7 @@ from typing import cast
 from PIL import Image
 
 from .config import ensure_output_dir, load_config, load_settings, validate_template_path
-from .image_utils import composite_template, load_image, validate_region
+from .image_utils import composite_template, load_image, load_logo_image, validate_region
 from .models import BatchItem, DeviceKind, Region, Settings
 
 logger = logging.getLogger(__name__)
@@ -50,15 +50,29 @@ class BatchGenerator:
             raise ValueError("Regions have not been confirmed. Run: python main.py --edit")
         viewport, address_bar = self._load_regions(settings, template.size)
         items = load_config(self.config_path, cast(DeviceKind, settings.active_device))
+        profile = settings.profile()
+        if profile.website_title_region is None:
+            raise ValueError("Website title region has not been selected")
+        if profile.website_logo_region is None:
+            raise ValueError("Website logo region has not been selected")
+        validate_region(profile.website_title_region, template.size, "Website title")
+        validate_region(profile.website_logo_region, template.size, "Website logo")
+        if not profile.website_logo_image_path:
+            raise ValueError("Website logo image has not been selected")
+        logo_path = Path(profile.website_logo_image_path)
+        if not logo_path.exists():
+            raise FileNotFoundError(f"Logo image not found: {logo_path}")
+        logo_image = load_logo_image(logo_path, (profile.website_logo_region.width, profile.website_logo_region.height))
         output_dir = ensure_output_dir(self.output_dir)
+        preserve_device_folder = output_dir.resolve() == Path("output").resolve()
         success = 0
         failed = 0
         errors: list[str] = []
         for index, item in enumerate(items, start=1):
             logger.info("Processing %s/%s: %s", index, len(items), item.output)
             try:
-                result = self._process_item(template, viewport, address_bar, settings, item, output_dir)
-                output_path = output_dir / item.output
+                result = self._process_item(template, viewport, address_bar, settings, profile, logo_image, item)
+                output_path = self._resolve_output_path(output_dir, item.output, preserve_device_folder)
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 result.save(output_path, format="PNG")
                 logger.info("Saved: %s", output_path)
@@ -79,8 +93,9 @@ class BatchGenerator:
         viewport: Region,
         address_bar: Region,
         settings: Settings,
+        profile,
+        logo_image: Image.Image,
         item: BatchItem,
-        output_dir: Path,
     ) -> Image.Image:
         if not item.screenshot.exists():
             raise FileNotFoundError(f"Screenshot not found: {item.screenshot}")
@@ -95,7 +110,20 @@ class BatchGenerator:
             screenshot=screenshot,
             url=item.url,
             website_title=website_title,
+            website_logo_text=settings.website_logo_text,
+            title_region=profile.website_title_region,
+            logo_region=profile.website_logo_region,
+            website_logo_image=logo_image,
             text_settings=settings.url_text,
             contain_background=settings.contain_background,
             fit_mode=item.fit,
         )
+
+    def _resolve_output_path(self, output_dir: Path, item_output: str, preserve_device_folder: bool) -> Path:
+        item_path = Path(item_output)
+        if preserve_device_folder:
+            return output_dir / item_path
+        parts = item_path.parts
+        if parts and parts[0] in {"desktop", "mobile"}:
+            item_path = Path(*parts[1:]) if len(parts) > 1 else Path(parts[0])
+        return output_dir / item_path

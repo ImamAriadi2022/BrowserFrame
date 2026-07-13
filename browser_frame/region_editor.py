@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from tkinter import BOTH, BOTTOM, LEFT, RIGHT, X, Y, Canvas, Frame, StringVar, Tk, Toplevel, filedialog, messagebox, ttk
+from tkinter import BOTH, BOTTOM, LEFT, RIGHT, X, Y, Canvas, Frame, StringVar, Text, Tk, Toplevel, filedialog, messagebox, ttk
 from typing import Literal
 
 from PIL import Image, ImageTk
@@ -16,7 +16,7 @@ from .preview import create_preview
 
 logger = logging.getLogger(__name__)
 
-RegionKind = Literal["viewport", "address_bar"]
+RegionKind = Literal["viewport", "address_bar", "website_title_region", "website_logo_region"]
 
 
 @dataclass(slots=True)
@@ -52,6 +52,9 @@ class RegionEditorApp:
         self.template_info_var = StringVar(value="Template: none | Resolution: -")
         self.status_var = StringVar(value="Open a template to begin.")
         self.website_title_var = StringVar(value=self.settings.website_title)
+        self.website_logo_var = StringVar(value=self.settings.website_logo_text)
+        self.logo_image_path_var = StringVar(value=self._profile().website_logo_image_path or "")
+        self.output_dir_var = StringVar(value=self.settings.output_dir or "output")
 
         self._build_ui()
         self._load_persisted_template_path()
@@ -97,14 +100,53 @@ class RegionEditorApp:
         self.canvas.bind("<Button-4>", self.on_mouse_wheel)
         self.canvas.bind("<Button-5>", self.on_mouse_wheel)
 
-        sidebar = ttk.Frame(center, width=360)
-        sidebar.grid(row=0, column=1, sticky="ns", padx=(6, 10), pady=6)
-        sidebar.grid_propagate(False)
+        sidebar_container = ttk.Frame(center, width=360)
+        sidebar_container.grid(row=0, column=1, sticky="nsew", padx=(6, 10), pady=6)
+        sidebar_container.grid_propagate(False)
+        sidebar_container.rowconfigure(0, weight=1)
+        sidebar_container.columnconfigure(0, weight=1)
+
+        sidebar_canvas = Canvas(sidebar_container, highlightthickness=0, width=360)
+        sidebar_canvas.grid(row=0, column=0, sticky="nsew")
+        self._sidebar_canvas = sidebar_canvas
+        sidebar_scrollbar = ttk.Scrollbar(sidebar_container, orient="vertical", command=sidebar_canvas.yview)
+        sidebar_scrollbar.grid(row=0, column=1, sticky="ns")
+        sidebar_canvas.configure(yscrollcommand=sidebar_scrollbar.set)
+
+        sidebar = ttk.Frame(sidebar_canvas)
+        sidebar_window = sidebar_canvas.create_window((0, 0), window=sidebar, anchor="nw")
+
+        def _update_sidebar_scrollregion(event=None) -> None:
+            sidebar_canvas.configure(scrollregion=sidebar_canvas.bbox("all"))
+            sidebar_canvas.itemconfigure(sidebar_window, width=sidebar_canvas.winfo_width())
+
+        sidebar.bind("<Configure>", _update_sidebar_scrollregion)
+        sidebar_canvas.bind("<Configure>", _update_sidebar_scrollregion)
+        sidebar_canvas.bind_all("<MouseWheel>", self._on_sidebar_mousewheel)
+
+        title_box = ttk.LabelFrame(sidebar, text="Website Title")
+        title_box.pack(fill=X, padx=2, pady=6)
+        ttk.Entry(title_box, textvariable=self.website_title_var).pack(fill=X, padx=8, pady=(8, 4))
+        ttk.Button(title_box, text="Apply Title", command=self.apply_title).pack(fill=X, padx=8, pady=(0, 8))
+
+        logo_box = ttk.LabelFrame(sidebar, text="Website Logo")
+        logo_box.pack(fill=X, padx=2, pady=6)
+        ttk.Entry(logo_box, textvariable=self.website_logo_var).pack(fill=X, padx=8, pady=(8, 4))
+        ttk.Button(logo_box, text="Apply Logo", command=self.apply_logo).pack(fill=X, padx=8, pady=(0, 8))
+        ttk.Button(logo_box, text="Choose Logo Image", command=self.choose_logo_image).pack(fill=X, padx=8, pady=(0, 8))
+        ttk.Label(logo_box, textvariable=self.logo_image_path_var, wraplength=320).pack(fill=X, padx=8, pady=(0, 8))
+
+        output_box = ttk.LabelFrame(sidebar, text="Export Folder")
+        output_box.pack(fill=X, padx=2, pady=6)
+        ttk.Entry(output_box, textvariable=self.output_dir_var).pack(fill=X, padx=8, pady=(8, 4))
+        ttk.Button(output_box, text="Choose Export Folder", command=self.choose_output_dir).pack(fill=X, padx=8, pady=(0, 8))
 
         region_box = ttk.LabelFrame(sidebar, text="Region Selection")
         region_box.pack(fill=X, padx=2, pady=6)
         ttk.Button(region_box, text="Select Viewport", command=lambda: self.set_active_region("viewport")).pack(fill=X, padx=8, pady=(8, 4))
         ttk.Button(region_box, text="Select Address Bar", command=lambda: self.set_active_region("address_bar")).pack(fill=X, padx=8, pady=(0, 8))
+        ttk.Button(region_box, text="Select Website Title", command=lambda: self.set_active_region("website_title_region")).pack(fill=X, padx=8, pady=(0, 4))
+        ttk.Button(region_box, text="Select Website Logo", command=lambda: self.set_active_region("website_logo_region")).pack(fill=X, padx=8, pady=(0, 8))
 
         coord_box = ttk.LabelFrame(sidebar, text="Fine Adjustment")
         coord_box.pack(fill=X, padx=2, pady=6)
@@ -130,10 +172,6 @@ class RegionEditorApp:
 
         actions = ttk.LabelFrame(sidebar, text="Actions")
         actions.pack(fill=X, padx=2, pady=6)
-        title_box = ttk.LabelFrame(sidebar, text="Website Title")
-        title_box.pack(fill=X, padx=2, pady=6)
-        ttk.Entry(title_box, textvariable=self.website_title_var).pack(fill=X, padx=8, pady=(8, 4))
-        ttk.Button(title_box, text="Apply Title", command=self.apply_title).pack(fill=X, padx=8, pady=(0, 8))
         ttk.Button(actions, text="Open Template", command=self.open_template_dialog).pack(fill=X, padx=8, pady=(8, 4))
         ttk.Button(actions, text="Preview Result", command=self.preview_result).pack(fill=X, padx=8, pady=4)
         ttk.Button(actions, text="Confirm Regions", command=self.confirm_regions).pack(fill=X, padx=8, pady=4)
@@ -148,9 +186,14 @@ class RegionEditorApp:
         ttk.Label(row, text=f"{label}:", width=10).pack(side=LEFT)
         ttk.Entry(row, textvariable=variable, width=14).pack(side=LEFT, fill=X, expand=True)
 
+    def _profile(self):
+        return self.settings.profile(self.device)
+
     def _load_persisted_template_path(self) -> None:
-        profile = self.settings.profile(self.device)
+        profile = self._profile()
         self.website_title_var.set(self.settings.website_title)
+        self.website_logo_var.set(self.settings.website_logo_text)
+        self.logo_image_path_var.set(profile.website_logo_image_path or "")
         if profile.template_path and Path(profile.template_path).exists():
             self.load_template(Path(profile.template_path))
         elif self.template_path and self.template_path.exists():
@@ -162,6 +205,31 @@ class RegionEditorApp:
         self.redraw()
         self.status_var.set("Website title updated")
 
+    def apply_logo(self) -> None:
+        self.settings.website_logo_text = self.website_logo_var.get().strip()
+        self._persist_settings()
+        self.redraw()
+        self.status_var.set("Website logo updated")
+
+    def choose_logo_image(self) -> None:
+        path = filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.webp;*.bmp"), ("All files", "*.*")])
+        if not path:
+            return
+        self._profile().website_logo_image_path = path
+        self.logo_image_path_var.set(path)
+        self.settings.regions_confirmed = False
+        self._persist_settings()
+        self.redraw()
+        self.status_var.set("Logo image selected")
+
+    def choose_output_dir(self) -> None:
+        path = filedialog.askdirectory()
+        if not path:
+            return
+        self.output_dir_var.set(path)
+        self._persist_settings()
+        self.status_var.set("Export folder selected")
+
     def open_template_dialog(self) -> None:
         path = filedialog.askopenfilename(filetypes=[("PNG images", "*.png"), ("Image files", "*.png;*.jpg;*.jpeg;*.webp"), ("All files", "*.*")])
         if path:
@@ -171,13 +239,18 @@ class RegionEditorApp:
         validate_template_path(path)
         self.template_path = path
         self.template_image = load_image(path)
-        self.settings.profile(self.device).template_path = str(path)
+        profile = self._profile()
+        profile.template_path = str(path)
         self._persist_settings()
         self.reset_zoom()
-        if self.settings.viewport is None:
-            self.settings.viewport = Region(0, 0, min(800, self.template_image.width), min(400, self.template_image.height))
-        if self.settings.address_bar is None:
-            self.settings.address_bar = Region(100, 40, min(1200, self.template_image.width - 100), 60)
+        if profile.viewport is None:
+            profile.viewport = Region(0, 128, self.template_image.width, max(1, self.template_image.height - 178))
+        if profile.address_bar is None:
+            profile.address_bar = Region(136, 58, min(1089, self.template_image.width - 136), 15)
+        if profile.website_title_region is None:
+            profile.website_title_region = Region(58, 2, 360, 32)
+        if profile.website_logo_region is None:
+            profile.website_logo_region = Region(16, 5, 26, 22)
         self._load_current_region_into_inputs()
         self._refresh_template_info()
         self.redraw()
@@ -198,13 +271,25 @@ class RegionEditorApp:
         self.redraw()
 
     def _current_region(self) -> Region | None:
-        return self.settings.viewport if self.active_region == "viewport" else self.settings.address_bar
+        profile = self._profile()
+        if self.active_region == "viewport":
+            return profile.viewport
+        if self.active_region == "address_bar":
+            return profile.address_bar
+        if self.active_region == "website_title_region":
+            return profile.website_title_region
+        return profile.website_logo_region
 
     def _set_current_region(self, region: Region | None) -> None:
+        profile = self._profile()
         if self.active_region == "viewport":
-            self.settings.viewport = region
+            profile.viewport = region
+        elif self.active_region == "address_bar":
+            profile.address_bar = region
+        elif self.active_region == "website_title_region":
+            profile.website_title_region = region
         else:
-            self.settings.address_bar = region
+            profile.website_logo_region = region
         self.settings.regions_confirmed = False
         self._persist_settings()
         self._load_current_region_into_inputs()
@@ -222,6 +307,20 @@ class RegionEditorApp:
         self.y_var.set(str(region.y))
         self.w_var.set(str(region.width))
         self.h_var.set(str(region.height))
+
+    def _on_sidebar_mousewheel(self, event) -> None:
+        sidebar_canvas = getattr(self, "_sidebar_canvas", None)
+        if sidebar_canvas is None:
+            return
+        delta = 0
+        if getattr(event, "delta", 0):
+            delta = -1 if event.delta > 0 else 1
+        elif getattr(event, "num", None) == 4:
+            delta = -1
+        elif getattr(event, "num", None) == 5:
+            delta = 1
+        if delta:
+            sidebar_canvas.yview_scroll(delta, "units")
 
     def _inputs_to_region(self) -> Region:
         return Region(
@@ -426,8 +525,11 @@ class RegionEditorApp:
         self.template_photo = ImageTk.PhotoImage(display)
         self.canvas.create_image(0, 0, anchor="nw", image=self.template_photo)
         self.canvas.configure(scrollregion=(0, 0, display.width, display.height))
-        self._draw_region(self.settings.viewport, outline="#1e88e5", label="VIEWPORT", fill="#1e88e5", dashed=False, stipple="gray25")
-        self._draw_region(self.settings.address_bar, outline="#e53935", label="ADDRESS BAR", fill="#e53935", dashed=True, stipple="gray50")
+        profile = self._profile()
+        self._draw_region(profile.viewport, outline="#1e88e5", label="VIEWPORT", fill="#1e88e5", dashed=False, stipple="gray25")
+        self._draw_region(profile.address_bar, outline="#e53935", label="ADDRESS BAR", fill="#e53935", dashed=True, stipple="gray50")
+        self._draw_region(profile.website_title_region, outline="#00acc1", label="WEBSITE TITLE", fill="#00acc1", dashed=True, stipple="gray50")
+        self._draw_region(profile.website_logo_region, outline="#43a047", label="WEBSITE LOGO", fill="#43a047", dashed=True, stipple="gray50")
         self.zoom_var.set(f"{round(self.transform.zoom * 100)}%")
         self._load_current_region_into_inputs()
 
@@ -500,31 +602,53 @@ class RegionEditorApp:
         if self.template_image is None:
             messagebox.showerror("BrowserFrame", "Load a template first.")
             return
-        if self.settings.viewport is None:
+        profile = self._profile()
+        if profile.viewport is None:
             messagebox.showerror("BrowserFrame", "Viewport has not been selected.")
             return
-        if self.settings.address_bar is None:
+        if profile.address_bar is None:
             messagebox.showerror("BrowserFrame", "Address bar has not been selected.")
             return
+        if profile.website_title_region is None:
+            messagebox.showerror("BrowserFrame", "Website title region has not been selected.")
+            return
+        if profile.website_logo_region is None:
+            messagebox.showerror("BrowserFrame", "Website logo region has not been selected.")
+            return
         try:
-            validate_region(self.settings.viewport, self.template_image.size, "Viewport")
-            validate_region(self.settings.address_bar, self.template_image.size, "Address bar")
+            validate_region(profile.viewport, self.template_image.size, "Viewport")
+            validate_region(profile.address_bar, self.template_image.size, "Address bar")
+            validate_region(profile.website_title_region, self.template_image.size, "Website title")
+            validate_region(profile.website_logo_region, self.template_image.size, "Website logo")
         except Exception as exc:  # noqa: BLE001
             messagebox.showerror("BrowserFrame", str(exc))
+            return
+        if not profile.website_logo_image_path:
+            messagebox.showerror("BrowserFrame", "Choose a logo image first.")
             return
         self.settings.regions_confirmed = True
         self._persist_settings()
         summary = (
             "Viewport:\n"
-            f"X: {self.settings.viewport.x}\n"
-            f"Y: {self.settings.viewport.y}\n"
-            f"Width: {self.settings.viewport.width}\n"
-            f"Height: {self.settings.viewport.height}\n\n"
+            f"X: {profile.viewport.x}\n"
+            f"Y: {profile.viewport.y}\n"
+            f"Width: {profile.viewport.width}\n"
+            f"Height: {profile.viewport.height}\n\n"
             "Address Bar:\n"
-            f"X: {self.settings.address_bar.x}\n"
-            f"Y: {self.settings.address_bar.y}\n"
-            f"Width: {self.settings.address_bar.width}\n"
-            f"Height: {self.settings.address_bar.height}"
+            f"X: {profile.address_bar.x}\n"
+            f"Y: {profile.address_bar.y}\n"
+            f"Width: {profile.address_bar.width}\n"
+            f"Height: {profile.address_bar.height}\n\n"
+            "Website Title:\n"
+            f"X: {profile.website_title_region.x}\n"
+            f"Y: {profile.website_title_region.y}\n"
+            f"Width: {profile.website_title_region.width}\n"
+            f"Height: {profile.website_title_region.height}\n\n"
+            "Website Logo:\n"
+            f"X: {profile.website_logo_region.x}\n"
+            f"Y: {profile.website_logo_region.y}\n"
+            f"Width: {profile.website_logo_region.width}\n"
+            f"Height: {profile.website_logo_region.height}"
         )
         result = choice_dialog(self.root, "Confirm Regions", f"{summary}\n\nUse these regions for batch generation?", ["Edit Again", "Save Only", "Save & Generate"])
         if result == "Edit Again":
@@ -541,11 +665,12 @@ class RegionEditorApp:
             self.settings.regions_confirmed = True
             self._persist_settings()
             try:
+                output_dir = Path(self.settings.output_dir or "output")
                 generator = BatchGenerator(
                     template_path=self.template_path,
                     config_path=Path("config.json"),
                     settings_path=Path("settings.json"),
-                    output_dir=Path("output"),
+                    output_dir=output_dir,
                 )
                 result_summary = generator.generate()
                 messagebox.showinfo(
@@ -563,9 +688,13 @@ class RegionEditorApp:
         self.confirm_regions()
 
     def _persist_settings(self) -> None:
-        self.settings.profile(self.device).regions_confirmed = self.settings.regions_confirmed
+        profile = self._profile()
+        profile.regions_confirmed = self.settings.regions_confirmed
         self.settings.active_device = self.device
         self.settings.website_title = self.website_title_var.get().strip()
+        self.settings.website_logo_text = self.website_logo_var.get().strip()
+        self.settings.output_dir = self.output_dir_var.get().strip() or "output"
+        profile.website_logo_image_path = self.logo_image_path_var.get().strip()
         save_settings(self.settings)
 
 
@@ -602,21 +731,45 @@ def simple_input_dialog(root: Tk, title: str, prompt: str, initial_value: str = 
 def choice_dialog(root: Tk, title: str, message: str, choices: list[str]) -> str | None:
     dialog = Toplevel(root)
     dialog.title(title)
-    dialog.geometry("520x260")
+    dialog.geometry("760x560")
+    dialog.minsize(680, 480)
     dialog.transient(root)
     dialog.grab_set()
     result: dict[str, str | None] = {"value": None}
 
-    ttk.Label(dialog, text=message, wraplength=480, justify="left").pack(fill=BOTH, expand=True, padx=12, pady=12)
+    dialog.columnconfigure(0, weight=1)
+    dialog.rowconfigure(0, weight=1)
+    dialog.rowconfigure(1, weight=0)
+
+    body = ttk.Frame(dialog)
+    body.grid(row=0, column=0, sticky="nsew", padx=12, pady=(12, 8))
+    body.rowconfigure(0, weight=1)
+    body.columnconfigure(0, weight=1)
+
+    text_frame = ttk.Frame(body)
+    text_frame.grid(row=0, column=0, sticky="nsew")
+    text_frame.rowconfigure(0, weight=1)
+    text_frame.columnconfigure(0, weight=1)
+
+    text = Text(text_frame, wrap="word", height=18, padx=12, pady=12, borderwidth=0, highlightthickness=0)
+    text.grid(row=0, column=0, sticky="nsew")
+    scroll = ttk.Scrollbar(text_frame, orient="vertical", command=text.yview)
+    scroll.grid(row=0, column=1, sticky="ns")
+    text.configure(yscrollcommand=scroll.set)
+    text.insert("1.0", message)
+    text.configure(state="disabled")
+
     buttons = ttk.Frame(dialog)
-    buttons.pack(fill=X, padx=12, pady=12)
+    buttons.grid(row=1, column=0, sticky="ew", padx=12, pady=(0, 12))
+    for index, _choice in enumerate(choices):
+        buttons.columnconfigure(index, weight=1)
 
     def choose(value: str) -> None:
         result["value"] = value
         dialog.destroy()
 
-    for choice in choices:
-        ttk.Button(buttons, text=choice, command=lambda value=choice: choose(value)).pack(side=LEFT, expand=True, fill=X, padx=4)
+    for index, choice in enumerate(choices):
+        ttk.Button(buttons, text=choice, command=lambda value=choice: choose(value)).grid(row=0, column=index, sticky="ew", padx=4)
     dialog.protocol("WM_DELETE_WINDOW", lambda: choose(choices[0] if choices else None))
     root.wait_window(dialog)
     return result["value"]
